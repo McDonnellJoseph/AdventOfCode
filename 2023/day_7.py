@@ -3,7 +3,7 @@ from collections import Counter
 with open("input.txt", "r") as f:
     input = f.read()
 
-lines = input.splitlines()[:10]
+lines = input.splitlines()
 
 hands, bids = [], []
 
@@ -32,18 +32,36 @@ ASSOCIATIONS = {
 
 def is_greater(hand_1, hand_2):
     oc1, oc2 = Counter(hand_1), Counter(hand_2)
+    if "J" in hand_1:
+        oc1_j = oc1.pop("J")
+    else:
+        oc1_j = 0
+
+    if "J" in hand_2:
+        oc2_j = oc2.pop("J")
+    else:
+        oc2_j = 0
     oc1_values, oc2_values = sorted(oc1.values(), reverse=True), sorted(
         oc2.values(), reverse=True
     )
+    oc1_keys, oc2_keys = sorted(oc1, key=oc1.get, reverse=True), sorted(
+        oc2, key=oc2.get, reverse=True
+    )
+    if len(oc1_values) == 0:
+        oc1_values.append(0)
 
-    if oc1_values[0] + oc1["J"] > oc2_values[0] + oc2["J"]:
+    if len(oc2_values) == 0:
+        oc2_values.append(0)
+    if oc1_values[0] + oc1_j > oc2_values[0] + oc2_j:
         return True
-    if oc2_values[0] + oc2["J"] > oc1_values[0] + oc1["J"]:
+    if oc2_values[0] + oc2_j > oc1_values[0] + oc1_j:
         return False
-    if oc1_values[1] > oc2_values[1]:
-        return True
-    if oc2_values[1] > oc1_values[1]:
-        return False
+
+    if oc1_values[0] + oc1_j < 5 and oc2_values[0] + oc2_j < 5:
+        if oc1_values[1] > oc2_values[1]:
+            return True
+        if oc2_values[1] > oc1_values[1]:
+            return False
     for let1, let2 in zip(hand_1, hand_2):
         if ASSOCIATIONS[let1] < ASSOCIATIONS[let2]:
             return True
