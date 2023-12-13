@@ -15,78 +15,118 @@ def parse_group(record, cond):
 
 
 PATTERN = re.compile(r"#+")
+from functools import lru_cache
 
 
-def enumerate_condition(string, conditions, count):
-    print("we are here")
-    print(string)
+@lru_cache(maxsize=None)
+def enumerate_condition(string, conditions):
     groups = list(PATTERN.finditer(string))
-    # breaking condition no more ? in string and the count matches the conditions we increase the count by one
+
+    # print("Starting with", string, conditions)
+    # print("These are the groups", groups)
+    # breaking condition no more ? in string and the count matches the conditions
     if "?" not in string:
-        print("not here")
         if len(groups) == len(conditions):
             truths = [
-                len(groups[i].span()) == conditions[i] for i in range(len(conditions))
+                (groups[i].span()[1] - groups[i].span()[0]) == conditions[i]
+                for i in range(len(conditions))
             ]
             if sum(truths) == len(conditions):
-                print("true")
                 return 1
         return 0
+
     to_replace = string.index("?")
     left = string[:to_replace] + "." + string[to_replace + 1 :]
     right = string[:to_replace] + "#" + string[to_replace + 1 :]
-    # If there are groups
-    preceed = [group for group in groups if group.span()[1] < to_replace]
-    for i in range(len(preceed)):
-        if i < len(preceed) and len(preceed[i].span()) != conditions[i]:
-            return 0
-        else:
-            print("toto")
-            if len(preceed[i]) == conditions[i]:
-                count += enumerate_condition(
-                    left[to_replace + 1 :], conditions[i + 1 :], count
-                )
-            elif len(preceed[i]) < conditions[i] and preceed[i].span()[1] == (
-                to_replace - 1
-            ):
-                count += enumerate_condition(
-                    right[preceed[i].span()[0] :], conditions[i:], count
-                )
-            else:
-                return 0
+    # Find all groups before our ?
+    preceed = [group for group in groups if group.span()[1] - 1 < to_replace]
+
     if len(preceed) == 0:
-        count += enumerate_condition(left[to_replace:], conditions, count)
-        count += enumerate_condition(right[to_replace:], conditions, count)
+        # look ahead
+        # if string[to_replace+1] == "#":
 
-    return count
+        return enumerate_condition(left[to_replace:], conditions) + enumerate_condition(
+            right[to_replace:], conditions
+        )
 
+    if len(preceed) > len(conditions):
+        return 0
 
-print(enumerate_condition("?#?#?#?#?#?#?#?", [1, 3, 1, 6], 0))
+    for i in range(len(preceed) - 1):
+        # For the first n - 1 groups
+        if preceed[i].span()[1] - preceed[i].span()[0] != conditions[i]:
+            return 0
 
-
-"""
-
-def resolve_tree(record, cond):
-    # Breaking condition: We have only # and ?
-    if len(record) == 1:
-        obj = record[0]
-        # Minimal number of true objects + minimal number of dots
-        if len(obj) < sum(cond) + len(cond):
-            return False
+    # For group n
+    # Case where the block has correct size
+    last = preceed[-1]
+    size_last = last.span()[-1] - last.span()[0]
+    pos = len(preceed)
+    if size_last == conditions[pos - 1]:
+        # If it ends just before the ?
+        if to_replace == last.span()[1]:
+            return enumerate_condition(left[to_replace + 1 :], conditions[pos:])
+        # If it ends way before search both ways
         else:
-            backtrack(obj, cond)
+            return enumerate_condition(
+                left[to_replace:], conditions[pos:]
+            ) + enumerate_condition(right[to_replace:], conditions[pos:])
 
-    # Enumerate Possible Splits
-    for i in range(0, len(cond), N):
-        sol_left = resolve_tree(record[:i], cond[:i])
-        sol_right = resolve_tree(record[i:], cond[i, :])
-
-
-for line in input.splitlines():
-    record, cond = line.split()
-    cond = [int(c) for c in cond.split(",")]
-    if parse_group(record, cond):
-        pass
+    # Case last group is smaller than required length and ends next to ?
+    elif size_last < conditions[pos - 1] and last.span()[1] == (to_replace):
+        return enumerate_condition(right[last.span()[0] :], conditions[pos - 1 :])
+    # Too small and can't be saved
     else:
-        pass
-"""
+        return 0
+
+
+# assert enumerate_condition("?#?#?#?#?#?#?#?", [1, 3, 1, 6], 0) == 1
+# assert enumerate_condition("???.###", [1, 1, 3], 0) == 1
+# assert enumerate_condition(".??..??...?##.", [1, 1, 3], 0) == 4
+# assert enumerate_condition("?###????????", [3, 2, 1], 0) == 10
+# assert enumerate_condition("?#?????.?..??.#??.", [1, 2, 1, 2, 1, 1], 0) == 4
+# assert (
+#     enumerate_condition(
+#         "???.###????.###????.###????.###????.###",
+#         [1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3],
+#         0,
+#     )
+#     == 1
+# )
+
+
+def brute_force(string, conditions):
+    groups = list(PATTERN.finditer(string))
+    if "?" not in string:
+        if len(groups) == len(conditions):
+            truths = [
+                (groups[i].span()[1] - groups[i].span()[0]) == conditions[i]
+                for i in range(len(conditions))
+            ]
+            if sum(truths) == len(conditions):
+                return 1
+        return 0
+    else:
+        to_replace = string.index("?")
+        left = string[:to_replace] + "." + string[to_replace + 1 :]
+        right = string[:to_replace] + "#" + string[to_replace + 1 :]
+        return brute_force(left, conditions) + brute_force(right, conditions)
+
+
+count = 0
+count_force = 0
+with open("input.txt") as f:
+    input = f.read()
+    lines = input.splitlines()
+    for line_nb in range(len(lines)):
+        print(line_nb)
+        full_text, full_numbers = [], []
+        for j in range(5):
+            text, numbers = lines[line_nb].split()
+            full_text.append(text + "?")
+            full_numbers += [int(nb) for nb in numbers.split(",")]
+
+        text = "".join(full_text)
+        text = text[:-1]
+        count += enumerate_condition(text, tuple(full_numbers))
+print(count)
