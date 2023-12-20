@@ -13,6 +13,14 @@ def return_lambda_sup(minval):
     return lambda x: x > minval
 
 
+def lambda_inf_range(maxval):
+    return lambda x: (range(x[0], maxval), range(maxval, x[-1] + 1))
+
+
+def lambda_sup_range(minval):
+    return lambda x: (range(minval + 1, x[-1] + 1), range(x[0], minval + 1))
+
+
 # Step 1: Create a dictionnary
 class Workflow:
     def __init__(self, conditions, name):
@@ -22,10 +30,13 @@ class Workflow:
         for condition in conditions[:-1]:
             func, workflow = condition.split(":")
             if func[1] == "<":
-                checks.append({func[0]: (return_lambda_inf(int(func[2:])), workflow)})
+                # checks.append({func[0]: (return_lambda_inf(int(func[2:])), workflow)})
+                checks.append({func[0]: (lambda_inf_range(int(func[2:])), workflow)})
 
             elif func[1] == ">":
-                checks.append({func[0]: (return_lambda_sup(int(func[2:])), workflow)})
+                # checks.append({func[0]: (return_lambda_sup(int(func[2:])), workflow)})
+                checks.append({func[0]: (lambda_sup_range(int(func[2:])), workflow)})
+
             else:
                 assert False
         checks.append(conditions[-1])
@@ -67,9 +78,36 @@ class Workflow:
         else:
             factory[go_to].evaluate_input(input_raw)
 
-    def evaluate_range(self, range_input):
+    def evaluate_range(self, range_input, accepted=[]):
         for cond in self.checks[:-1]:
-            pass
+            letter = list(cond.keys())[0]
+            func, go_to = cond[letter]
+
+            to_evaluate = range_input[letter]
+            true_range, false_range = func(to_evaluate)
+
+            if true_range:
+                true_output = range_input.copy()
+                true_output[letter] = true_range
+                if go_to == "A":
+                    accepted.append(true_output)
+                elif go_to == "R":
+                    pass
+                else:
+                    accepted += factory[go_to].evaluate_range(true_output)
+
+            if false_range:
+                range_input[letter] = false_range
+            else:
+                return accepted
+        go_to = self.checks[-1]
+        if go_to == "A":
+            accepted.append(range_input)
+            return accepted
+        elif go_to == "R":
+            return accepted
+        else:
+            return accepted + factory[go_to].evaluate_range(range_input)
 
 
 worfklows, inputs = input.split("\n\n")
@@ -80,6 +118,7 @@ for workflow in worfklows.splitlines():
     factory[name] = Workflow(flow, name)
 
 # Part 1
+"""
 for toto in inputs.splitlines():
     factory["in"].evaluate_input(toto)
 
@@ -93,7 +132,16 @@ def count_accepted(accepted):
     return total
 
 
+print(ACCEPTED)
+
+print(REJECTED)
+
+print(count_accepted(ACCEPTED))
+"""
+
 # Part 2 = Part 1 with intervals
+ACCEPTED = []
+REJECTED = []
 base_input = {
     "x": range(1, 4001),
     "m": range(1, 4001),
@@ -101,9 +149,23 @@ base_input = {
     "s": range(1, 4001),
 }
 
+accepted_ranges = factory["in"].evaluate_range(base_input)
+print(accepted_ranges)
 
-print(ACCEPTED)
+import math
+from operator import mul
+from functools import reduce
 
-print(REJECTED)
 
-print(count_accepted(ACCEPTED))
+print(len(accepted_ranges))
+total = 0
+for acc in accepted_ranges:
+    # check if a set is included in another
+    print(acc)
+    caca = [len(x) for x in acc.values()]
+    fac = reduce(mul, caca, 1)
+    total += fac
+print(total)
+print(167409079868000)
+
+# print(ACCEPTED)
