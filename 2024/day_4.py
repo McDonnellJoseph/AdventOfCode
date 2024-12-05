@@ -5,8 +5,6 @@ with open("input.txt") as f:
 
 input = input.splitlines()
 
-letter_dict = {(i,j):input[i][j] for i in range(len(input)) for j in range(len(input[0]))}
-
 total = 0
 for x in range(len(input)):
     for y in range(len(input[0])):
@@ -21,7 +19,7 @@ for x in range(len(input)):
                         possible_paths.append((dx, dy))
                         sanity_check.append([input[x][y], input[x+dx][y+dy]])
                 except IndexError:
-                    continue
+                    pass
             
             invalid_count = 0
             for dx, dy in possible_paths:
