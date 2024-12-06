@@ -50,15 +50,21 @@ for b1, b2, b3 in combinations(hit_obstacles, 3):
          int(pow((b3[1] - b1[1]), 2)))
      
     # Check Pythagoras Formula 
-    if ((A > 0 and B > 0 and C > 0):
+    if (A > 0 and B > 0 and C > 0):
         if A == (B+C):
+            count_possible += 1
             ...
+            # Opposite coordinate is C
+            # Add 
+        if B == (A +C):
+            count_possible += 1
 
-        (A == (B + C) or B == (A + C) or
-         C == (A + B))):
+            ...
+        if C == (A+B):
+            count_possible += 1
+
+            ...
         print("Yes")
-        blocker_set.add({b1, b2, b3})
-        count_possible += 1
     else:
         print("No")
 print(count_possible)
