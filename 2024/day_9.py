@@ -97,22 +97,35 @@ def part22(fs):
 
 fs, empty_blocks, block_sizes, p2 = to_sparse(input)
 # arranged_blocks = move_blocks(fs, empty_blocks)
-print_state(p2)
+# print_state(p2)
 
 fs = part22(p2)
-fs = part22(fs)
-fs = part22(fs)
-to_print = print_state(fs)
-with open("out.txt", "w") as f:
-    print(to_print, file=f)
-print(
-    sum(
-        [
-            i * int(to_print[i]) if to_print[i] != "." else 0
-            for i in range(len(to_print))
-        ]
-    )
-)
+fs = part22(p2)
+# print(fs)
+count = 0
+index = 0
+for block in fs:
+    # print(block[0], block[1])
+    # if not empty space
+    if block[2] >= 0:
+        # id * sum of range()
+        # print("id", block[2])
+        # print("index", index, index + (block[1] - block[0]))
+        count += block[2] * sum(range(index, index + (block[1] - block[0])))
+    index += block[1] - block[0]
+print(count)
+
+
+# with open("out.txt", "w") as f:
+#     print(to_print, file=f)
+# print(
+#     sum(
+#         [
+#             i * int(to_print[i]) if to_print[i] != "." else 0
+#             for i in range(len(to_print))
+#         ]
+#     )
+# )
 
 # print(sum([i * arranged_blocks[i] for i in range(len(arranged_blocks))]))
 "00992111777.44.333....5555.6666.....8888.."
