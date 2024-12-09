@@ -53,7 +53,7 @@ def part22(fs):
     index_offset = 0
     # Rebuild the array
     for i in reversed(range(len(fs))):
-        i -= index_offset
+        i += index_offset
         # if block skip
         if fs[i][2] < 0 or fs[i][3]:
             continue
@@ -96,41 +96,14 @@ def part22(fs):
 
 
 fs, empty_blocks, block_sizes, p2 = to_sparse(input)
-# arranged_blocks = move_blocks(fs, empty_blocks)
-# print_state(p2)
 
 fs = part22(p2)
 fs = part22(p2)
-# print(fs)
+fs = part22(p2)
 count = 0
 index = 0
 for block in fs:
-    # print(block[0], block[1])
-    # if not empty space
     if block[2] >= 0:
-        # id * sum of range()
-        # print("id", block[2])
-        # print("index", index, index + (block[1] - block[0]))
         count += block[2] * sum(range(index, index + (block[1] - block[0])))
     index += block[1] - block[0]
 print(count)
-
-
-# with open("out.txt", "w") as f:
-#     print(to_print, file=f)
-# print(
-#     sum(
-#         [
-#             i * int(to_print[i]) if to_print[i] != "." else 0
-#             for i in range(len(to_print))
-#         ]
-#     )
-# )
-
-# print(sum([i * arranged_blocks[i] for i in range(len(arranged_blocks))]))
-"00992111777.44.333....5555.6666.....8888.."
-# print(fs, len(fs))
-
-# part2 = move_blocksp2(fs, empty_blocks, block_sizes)
-# print("part2", part2)
-# print(sum([i * part2[i] for i in range(len(part2))]))
