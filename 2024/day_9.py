@@ -1,76 +1,123 @@
+from typing import List
+
+
 with open("input.txt") as f:
-    input = f.read()
+    input = f.read().strip("\n")
 
 
 def to_sparse(dense):
     fs = []
     block_sizes = []
     empty_blocks = []
+    p2 = []
     idx_pointer = 0
     block_pointer = 0
     for i in range(len(dense)):
         if i % 2 == 0:
-            to_add = [i//2] * int(dense[i])
-            block_sizes.append((block_pointer, block_pointer+int(dense[i])))
-
+            to_add = [i // 2] * int(dense[i])
+            block_sizes.append((block_pointer, block_pointer + int(dense[i])))
             idx_pointer += int(dense[i])
             block_pointer += int(dense[i])
-
             fs.extend(to_add)
-
+            p2.append((idx_pointer, idx_pointer + int(dense[i]), i // 2, 0))
         else:
-            #to_add = [-1] * int(dense[i])
-            # (start index, end_index)
-            empty_blocks.append((idx_pointer, idx_pointer+int(dense[i])))
-            #fs.extend(to_add)
+            empty_blocks.append((idx_pointer, idx_pointer + int(dense[i])))
+            empty_blocks.append((idx_pointer, idx_pointer + int(dense[i])))
+            p2.append((idx_pointer, idx_pointer + int(dense[i]), -1))
             idx_pointer += int(dense[i])
-    return fs,empty_blocks, block_sizes
+
+    return fs, empty_blocks, block_sizes, p2
+
 
 def move_blocks(sparse, empty_blocks):
     for start, end in empty_blocks:
-        size = end - start 
+        size = end - start
         for i in range(size):
             last = sparse[-1]
-            sparse.insert(start+i, last)
+            sparse.insert(start + i, last)
             del sparse[-1]
     return sparse
 
-def update_blocks(block_list, update_size):
-    ...
 
-def move_blocksp2(sparse, empty_blocks, block_sizes):
-    sparse_size = len(sparse)
-    print(sparse[27])
-    print(sparse[26])
-    for i in range(len(block_sizes)):
-        block_start, block_end = block_sizes[-1 - i]
+def print_state(state):
+    to_print = ""
+    for i in range(len(state)):
+        if state[i][2] < 0:
+            to_print += "." * (state[i][1] - state[i][0])
+        else:
+            to_print += str(state[i][2]) * (state[i][1] - state[i][0])
+    return to_print
+
+
+def part22(fs):
+    index_offset = 0
+    # Rebuild the array
+    for i in reversed(range(len(fs))):
+        i -= index_offset
+        # if block skip
+        if fs[i][2] < 0 or fs[i][3]:
+            continue
+        # Iterate starting from end
+        block_start, block_end = fs[i][0], fs[i][1]
         block_size = block_end - block_start
-        print(block_start, block_end)
-        print(sparse)
-        for k, (start, end) in enumerate(empty_blocks):
-            size = end - start 
-            if size >= block_size:
-                print("Block start end", start, end)
-                for j in range(block_size):
-                    print("block end",block_end, j)
-                    print(len(sparse))
-                    print(len(sparse))
-                    #print(sparse[len(sparse)])
-                    last = sparse[block_end - 1 - j ]
-                    print("last", last)
-                    sparse.insert(start+1+j, last)
-                    block_end += 1
-                    del sparse[-1]
-                # update empty block with remaining space 
-                
-                empty_blocks[k] = (start + block_size, end)
-        return sparse
+
+        made_move = False
+
+        for k in range(i):
+            if fs[k][2] != -1:
+                continue
+            empty_start, empty_end = fs[k][0], fs[k][1]
+            empty_size = empty_end - empty_start
+            # If the empty block is big enough to fit the file block
+            if empty_size >= block_size:
+                dist = fs[i][0] - fs[k][0]
+                # Insert the block
+                fs.insert(k, (fs[i][0] - dist, fs[i][1] - dist, fs[i][2], 1))
+                # Insert Empty space where the block used to be
+                fs.insert(i + 1, (fs[i + 1][0], fs[i + 1][1], -1))
+                # Update the space
+                if empty_size > block_size:
+                    fs[k + 1] = (
+                        fs[k + 1][0] + block_size,
+                        fs[k + 1][1],
+                        -1,
+                    )
+                    del fs[i + 2]
+                    index_offset += 1
+                else:
+                    del fs[k + 1]
+                    del fs[i + 1]
+                made_move = True
+                break
+            if not made_move:
+                fs[i] = (fs[i][0], fs[i][1], fs[i][2], 1)
+
+    return fs
 
 
-fs, empty_blocks, block_sizes = to_sparse(input)
-#arranged_blocks = move_blocks(fs, empty_blocks)
+fs, empty_blocks, block_sizes, p2 = to_sparse(input)
+# arranged_blocks = move_blocks(fs, empty_blocks)
+print_state(p2)
 
-#print(sum([i * arranged_blocks[i] for i in range(len(arranged_blocks))]))
+fs = part22(p2)
+fs = part22(fs)
+fs = part22(fs)
+to_print = print_state(fs)
+with open("out.txt", "w") as f:
+    print(to_print, file=f)
+print(
+    sum(
+        [
+            i * int(to_print[i]) if to_print[i] != "." else 0
+            for i in range(len(to_print))
+        ]
+    )
+)
+
+# print(sum([i * arranged_blocks[i] for i in range(len(arranged_blocks))]))
 "00992111777.44.333....5555.6666.....8888.."
-print(fs, len(fs))
-print(move_blocksp2(fs, empty_blocks, block_sizes))
+# print(fs, len(fs))
+
+# part2 = move_blocksp2(fs, empty_blocks, block_sizes)
+# print("part2", part2)
+# print(sum([i * part2[i] for i in range(len(part2))]))
