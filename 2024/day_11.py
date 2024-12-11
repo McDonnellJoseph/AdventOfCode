@@ -34,8 +34,8 @@ def blink(line):
 from functools import lru_cache
 
 # For each 0 
-@lru_cache(max_size=None)
-def digit_transform(digit, n_transformations)
+@lru_cache(maxsize=None)
+def digit_transform(digit, n_transformations):
     while len(str(digit)) % 2 != 0:
         if digit == 0:
             digit = 1
@@ -49,10 +49,15 @@ def digit_transform(digit, n_transformations)
 
 for l in line:
     n_transformations = 0
+    to_transform = [l]
     while n_transformations < 75:
-        left, right, n_transformations = digit_transform(digit, n_transformations) 
-
-
-for i in range(25):
-    line = blink(line)
-print(len(line))
+        index_offset = 0
+        for i, d in enumerate(to_transform):
+            i += index_offset
+            print(i,d)
+            left, right, n_transformations = digit_transform(d, n_transformations) 
+            to_transform.insert(i, left)
+            to_transform.insert(i+1, right)
+            print(to_transform)
+            del to_transform[i+2]
+            index_offset += 1
