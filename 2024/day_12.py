@@ -1,4 +1,5 @@
 with open("input.txt") as f:
+<<<<<<< HEAD
     input = f.read().splitlines()
 
 garden = {}
@@ -132,3 +133,82 @@ for group in groups:
 
 print(total_p1)
 print(total_p2)
+=======
+    input = f.read()
+
+input = input.splitlines()
+
+garden = {}
+# Step 1: group the tiles
+for i in range(len(input)):
+    for j in range(len(input)):
+        garden[(i, j) ] = input[i][j]
+
+moves = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+def find_group(letter, y, x, visited):
+    group = [(y, x)]
+    for dy, dx in moves:
+        if (y+dy, x+dx) not in visited and (y+dy, x+dx) in garden:
+            visited.append((y+dy, x+dx))
+            if garden[(y+dy, x+dx)] == letter:
+                # Add to group and continue search
+                group.extend(find_group(letter, y+dy, x+dx, visited))
+    
+    return group
+
+already_done = []
+groups = []
+for key in garden:
+    if key not in already_done:
+        group = find_group(garden[key], key[0], key[1], [key])
+        groups.append(group)
+        already_done.extend(group)
+
+total_p1 = 0
+# For each group result is size * perimeter 
+for group in groups:
+    perim = 0
+    # Bin by horizontal axis 
+    bins = {}
+    for g in group:
+        if g[0] in bins:
+            bins[g[0]].append(g[1])
+        else:
+            bins[g[0]] = [g[1]]
+    print("bins", bins)
+    is_top = True
+    for b in bins:
+        # split into continuous groups
+        vert_sort = sorted(bins[b])
+        vert_groups = [[vert_sort[0]]]
+        for i in range(1, len(vert_sort)):
+            if vert_sort[i] - vert_groups[-1][-1] > 1:
+                vert_groups.append([vert_sort[i]])
+            else:
+                vert_groups[-1].append(vert_sort[i])
+        row_size = max(bins[b]) + 1 - min(bins[b])
+        if is_top:
+            perim += row_size
+            last_row = row_size
+            is_top = False
+        else:
+            delta = abs(row_size - last_row)
+            perim += delta
+            last_row = row_size
+
+    # close perimeter
+    perim += row_size
+    # Add sides
+    perim += 2 * len(bins)
+    print("Group", group)
+    print("Size", len(group))
+    print("Perimeter", perim)
+    total_p1 += len(group) * perim
+
+
+
+print(groups)
+
+print(total_p1)
+>>>>>>> a381558 (ongoing)
