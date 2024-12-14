@@ -1,8 +1,24 @@
-#include <array>
 #include <stdio.h>
-#include <stdlib.h>
 
-std::array<typename Tp, size_t Nm>
+void increment_quadrant_idx(int width, int height, int x, int y, int *quadrant_arr) {
+    if (x < width / 2) {
+        if (y < height /2 ){
+            quadrant_arr[0] += 1;
+            }
+        else if (y > height / 2) {
+            quadrant_arr[2] += 1;
+            }
+                
+        }
+    else if (x > width /2) {
+            if (y < height /2 ){
+                    quadrant_arr[1] += 1;
+            }
+            else if (y > height / 2) {
+                        quadrant_arr[3] += 1;
+                    }
+            }
+}
 
 int main() {
     FILE *fptr;
@@ -16,66 +32,56 @@ int main() {
 
     // Create empty of size n_lines * 4
     int input_arr[N_LINES][4];
+    int quadrant_arr[4];
 
-    while (fgets(line, sizeof(line), fptr)) {
-        // Retrieve coordinates 
-        if (sscanf(line, "p=%d,%d v=%d,%d", &x, &y, &vx, &vy)==4) {
-            //printf("Coords x: %d and y: %d, velocity x: %d, y: %d \n", x,y, vx, vy);
-            int x_after = (x +( vx * 100)) % WIDTH;
-            int y_after = (y + (vy * 100)) % HEIGHT;
-
-            if (x_after < 0) {
-                x_after = WIDTH + x_after;
-            }
-            if (y_after<0) {
-                y_after = HEIGHT + y_after;
-            }
-           // printf("Final postion x: %d and y: %d \n", x_after,y_after);
-
-            if (x_after < WIDTH / 2) {
-                if (y_after < HEIGHT /2 ){
-                    quadrant_ul = quadrant_ul + 1;
-                }
-                else if (y_after > HEIGHT / 2) {
-                        quadrant_ll = quadrant_ll + 1;
-                    }
-                
-            }
-            else if (x_after > WIDTH /2) {
-                if (y_after < HEIGHT /2 ){
-                    quadrant_ur = quadrant_ur + 1;
-                }
-                else if (y_after > HEIGHT / 2) {
-                        quadrant_lr = quadrant_lr + 1;
-                    }
-            }
-            
-            }
-  
-        };
-    
+    quadrant_arr[0] = 0;
+    quadrant_arr[1] = 0;
+    quadrant_arr[2] = 0;
+    quadrant_arr[3] = 0;
     // Read each line
     char line[256];
-
-    const int WIDTH = 101;
-    const int HEIGHT = 103;
-
     int x;
     int y;
     int vx;
     int vy;
 
-    int quadrant_ul = 0;
-    int quadrant_ur = 0;
-    int quadrant_ll = 0;
-    int quadrant_lr = 0;
 
+    int i = 0;
+    while (fgets(line, sizeof(line), fptr)) {
+        // Retrieve coordinates 
+        if (sscanf(line, "p=%d,%d v=%d,%d", &x, &y, &vx, &vy)==4) {
+            input_arr[i][0] = x;
+            input_arr[i][1] = y;
+            input_arr[i][2] = vx;
+            input_arr[i][3] = vy;
+        }
+        i +=1;
+    }
 
-    printf("Total Upper left quadrant %d \n", quadrant_ul);
-    printf("Total Upper right quadrant %d \n", quadrant_ur);
-    printf("Total Lower left quadrant %d \n", quadrant_ll);
-    printf("Total Lower right quadrant %d \n", quadrant_lr);
-    int part1 = quadrant_ul * quadrant_ur * quadrant_ll * quadrant_lr;
+    
+    for (i=0; i < N_LINES; i+=1) {
+        x = input_arr[i][0];
+        y = input_arr[i][1];
+        vx = input_arr[i][2];
+        vy = input_arr[i][3];
+
+        int x_after = (x +( vx * 100)) % WIDTH;
+        int y_after = (y + (vy * 100)) % HEIGHT;
+
+        if (x_after < 0) {
+            x_after = WIDTH + x_after;
+        }
+        if (y_after < 0) {
+            y_after = HEIGHT + y_after;
+        }    
+
+        printf("X after: %d Y after: %d \n", x_after, y_after);
+        increment_quadrant_idx(WIDTH,HEIGHT,x_after, y_after, quadrant_arr);
+        printf("Quadrant %d %d %d %d\n",quadrant_arr[0],  quadrant_arr[1], quadrant_arr[2] ,quadrant_arr[3]);
+
+    }    
+
+    int part1 = quadrant_arr[0] * quadrant_arr[1] * quadrant_arr[2] * quadrant_arr[3];
     printf("Result Part 1: %d \n", part1);
 
     }
