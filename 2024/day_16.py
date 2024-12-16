@@ -6,7 +6,7 @@ for i in range(len(input)):
     for j in range(len(input[0])):
         if input[i][j] == "S":
             start_pos = (i, j)
-            print("THis is the start pos", start_pos)
+            print("Tis is the start pos", start_pos)
             input[i] = input[i][:j] + "." + input[i][j + 1 :]
         if input[i][j] == "E":
             end_pos = (i, j)
@@ -33,36 +33,27 @@ def get_nodes(G, node_dir, preds):
     node, dir = node_dir
 
     candidates = []
-    print(node_dir)
     if dir == (0, 0):
         # fetch last dir
-
         last_node_dir = preds[node_dir]
-        print(last_node_dir)
+        assert last_node_dir is not None
         last_node, last_dir = last_node_dir
         assert last_dir != (0, 0)
-        print("Hello")
         if last_dir[0] != 0:
-            print("here")
             if ((node[0], node[1] + 1), (0, 1)) in G:
-                print("Appending")
                 candidates.append(((node[0], node[1] + 1), (0, 1)))
             if ((node[0], node[1] - 1), (0, -1)) in G:
-                print("Appending")
                 candidates.append(((node[0], node[1] - 1), (0, -1)))
         else:
             if ((node[0] + 1, node[1]), (1, 0)) in G:
-                print("Appending")
                 candidates.append(((node[0] + 1, node[1]), (1, 0)))
-            if ((node[0] - 1, node[1]), (0, -1)) in G:
-                print("Appending")
+            if ((node[0] - 1, node[1]), (-1, 0)) in G:
                 candidates.append(((node[0] - 1, node[1]), (-1, 0)))
     else:
-        print("here")
         if ((node[0] + dir[0], node[1] + dir[1]), dir) in G:
             candidates.append(((node[0] + dir[0], node[1] + dir[1]), dir))
         candidates.append((node, (0, 0)))
-        print("candidates", candidates)
+    
     return candidates
 
 
@@ -72,22 +63,23 @@ def min_dict(d, Q):
 
 
 def djikstra(G, start_pos, end_pos):
-    Q = list(G).append((start_pos, (0, 1)))
+    Q = list(G)
+    Q.append((start_pos, (0, 1)))
     dist = {g: float("inf") for g in G}
     prev = {g: None for g in G}
-    for g in G:
-        print(g)
-    print(Q)
+    print("THis is the start pos")
+    print(start_pos)
     if (start_pos, (0, 1)) not in Q:
         assert False
     dist[(start_pos, (0, 1))] = 0
-    prev[(start_pos, (0, 1))] = (start_pos[0], start_pos[1]), (None, None)
+    prev[(start_pos, (0, 1))] = ((start_pos[0], start_pos[1]), (None, None))
 
     while Q:
         u = min_dict(dist, Q)
-        print("Min", u, "COst", dist[u])
+        #print("Min", u, "COst", dist[u])
         Q.remove(u)
         if u[0] == end_pos:
+            print("Ending dist", dist[u])
             return dist, prev
         for candidate in get_nodes(G, u, prev):
             alt = dist[u] + G[candidate]
@@ -95,7 +87,7 @@ def djikstra(G, start_pos, end_pos):
                 dist[candidate] = alt
                 prev[candidate] = u
     return dist, prev
-
+ 
 
 def get_path(preds, start_pos, end_pos):
     path = [end_pos]
