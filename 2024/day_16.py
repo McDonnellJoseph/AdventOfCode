@@ -35,20 +35,21 @@ def get_nodes(G, node_dir, preds):
     candidates = []
     if dir == (0, 0):
         # fetch last dir
-        last_node_dir = preds[node_dir]
-        assert last_node_dir is not None
-        last_node, last_dir = last_node_dir
-        assert last_dir != (0, 0)
-        if last_dir[0] != 0:
-            if ((node[0], node[1] + 1), (0, 1)) in G:
-                candidates.append(((node[0], node[1] + 1), (0, 1)))
-            if ((node[0], node[1] - 1), (0, -1)) in G:
-                candidates.append(((node[0], node[1] - 1), (0, -1)))
-        else:
-            if ((node[0] + 1, node[1]), (1, 0)) in G:
-                candidates.append(((node[0] + 1, node[1]), (1, 0)))
-            if ((node[0] - 1, node[1]), (-1, 0)) in G:
-                candidates.append(((node[0] - 1, node[1]), (-1, 0)))
+
+        for last_node_dir in preds[node_dir]:
+            assert last_node_dir is not None
+            last_node, last_dir = last_node_dir
+            assert last_dir != (0, 0)
+            if last_dir[0] != 0:
+                if ((node[0], node[1] + 1), (0, 1)) in G:
+                    candidates.append(((node[0], node[1] + 1), (0, 1)))
+                if ((node[0], node[1] - 1), (0, -1)) in G:
+                    candidates.append(((node[0], node[1] - 1), (0, -1)))
+            else:
+                if ((node[0] + 1, node[1]), (1, 0)) in G:
+                    candidates.append(((node[0] + 1, node[1]), (1, 0)))
+                if ((node[0] - 1, node[1]), (-1, 0)) in G:
+                    candidates.append(((node[0] - 1, node[1]), (-1, 0)))
     else:
         if ((node[0] + dir[0], node[1] + dir[1]), dir) in G:
             candidates.append(((node[0] + dir[0], node[1] + dir[1]), dir))
@@ -66,13 +67,14 @@ def djikstra(G, start_pos, end_pos):
     Q = list(G)
     Q.append((start_pos, (0, 1)))
     dist = {g: float("inf") for g in G}
-    prev = {g: None for g in G}
+    prev = {g: [] for g in G}
     print("THis is the start pos")
     print(start_pos)
+    shortest_paths = [prev]
     if (start_pos, (0, 1)) not in Q:
         assert False
     dist[(start_pos, (0, 1))] = 0
-    prev[(start_pos, (0, 1))] = ((start_pos[0], start_pos[1]), (None, None))
+    prev[(start_pos, (0, 1))] = [((start_pos[0], start_pos[1]), (None, None))]
 
     while Q:
         u = min_dict(dist, Q)
@@ -85,16 +87,22 @@ def djikstra(G, start_pos, end_pos):
             alt = dist[u] + G[candidate]
             if alt < dist[candidate]:
                 dist[candidate] = alt
-                prev[candidate] = u
+                prev[candidate] = [u]
+            elif alt == dist[candidate]:
+                prev[candidate].append(u)
     return dist, prev
  
 
 def get_path(preds, start_pos, end_pos):
-    path = [end_pos]
-    while path[-1] != start_pos:
-        prev = preds[path[-1]]
-        path.append(prev)
-    return list(reversed(path))
+    path = {end_pos[0]}
+    node = end_pos
+    while node != start_pos:
+        node = preds[node][0]
+        path.add(node[0])
+        for i in range(1, len(preds[node])):
+            path = path.union(get_path(preds, start_pos, preds[node][i]))
+
+    return path
 
 
 def get_cost(path):
@@ -112,24 +120,7 @@ def get_cost(path):
 
 
 dist, prev = djikstra(maze, start_pos, end_pos)
-path = get_path(prev, start_pos, end_pos)
-print(path)
-next_dir_map = {(-1, 0): "^", (1, 0): "v", (0, 1): ">", (0, -1): "<"}
-output = input.copy()
-dir = (0, 1)
-sy, sx = start_pos
-turn_count = 0
-output[sy] = output[sy][:sx] + "S" + output[sy][sx + 1 :]
-for i in range(len(path) - 1):
-    y, x = path[i]
-    next_dir = (path[i + 1][0] - path[i][0], path[i + 1][1] - path[i][1])
-    if next_dir != dir:
-        turn_count += 1001
-    else:
-        turn_count += 1
-    output[y] = output[y][:x] + next_dir_map[next_dir] + output[y][x + 1 :]
-    dir = next_dir
-for _ in output:
-    print(_)
-# print(output)
-print(turn_count)
+
+
+path = get_path(prev, (start_pos,(0, 1)), (end_pos, (0,1)))
+print(len(path))
