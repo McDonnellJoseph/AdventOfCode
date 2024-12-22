@@ -24,6 +24,11 @@ MVS = {}
 KEY_ROBOT_START = (3, 2)
 DIR_ROBOT_START = (0, 2)
 
+
+TUPS_DIR = {(0, 1): ">", (0, -1): "<", 
+        (-1, 0):"^", (1, 0): "v"}
+
+
 def manhattan_routes(start, end, inv_dir):
     def helper(current, path):
         if current == end:
@@ -32,15 +37,76 @@ def manhattan_routes(start, end, inv_dir):
         y, x = current
         ey = end[0]-y
         ex = end[1] - x
-        if ex != 0 and (y, x+copysign(1, ex)) in inv_dir:
-            helper((y, x+copysign(1, ex)), path + [(y, x+copysign(1, ex))])
+        if ex != 0 and (y, x+int(copysign(1, ex))) in inv_dir:
+            helper((y, x+copysign(1, ex)), path + [TUPS_DIR[(0, int(copysign(1, ex)))]])
 
-        if ey !=0  and (y+copysign(1, ey), x) inv_dir:
-            helper((y+copysign(1,ey), x), path + [(y + copysign(1, ey), x)])
-
+        if ey !=0  and (y+int(copysign(1, ey)), x) in inv_dir:
+            helper((y+copysign(1,ey), x), path + [TUPS_DIR[(int(copysign(1, ey)), 0)]])
+ 
+    
     results = []
-    helper(start, [start])
+    helper(start, [])
+    
     return results
+
+# For any route on the direction digicode find the cost on the next digicode
+def digicode_cost(a, b, level):
+    """
+        Given 2 posititions on the direction digicode.
+        Return the smallest route on the next digicode and it's cost.
+    """
+    if level == 2:
+        possible_routes = manhattan_routes(a, b, DIR_INV)
+        return min(possible_routes), len(min(possible_routes))
+
+    possible_routes = manhattan_routes(a, b, DIR_INV)
+    min_route = None
+    min_cost = float("inf")
+    for route in possible_routes:
+        total_route = []
+        cost = 0
+        for i in range(1, len(route)):
+            smallest_route, smallest_cost = digicode_cost(route[i-1], route[i], level+1)
+            cost += smallest_cost
+            total_route.extend(smallest_route)
+        if cost < min_cost:
+            min_route = total_route
+            min_cost = cost
+
+    return min_route, min_cost
+
+def get_route_cost(route, is_final):
+
+    cost = 0
+    # For each step 
+    for i in range(1, len(route)):
+        print(DIR_INV[route[i-1]], DIR_INV[route[i]])
+        # Possible routes to make the move
+        possible_routes = manhattan_routes(DIR_INV[route[i-1]], DIR_INV[route[i]], DIR)
+
+        if is_final:
+            cost += len(min(possible_routes))
+        else:
+            for pos_route in possible_routes:
+                cost += get_best_route(pos_route, is_final)
+
+    return cost
+
+
+def bfs(a, b):
+    # Get all routes on keypad from A to B
+    routes = manhattan_routes(current_pos, next_key_pos, NUM_INV)
+    # For each route from A to B:
+    min_route = None
+    min_cost = float("inf")
+    for route in routes:
+    #   - For each step on this route:
+        total_route = []
+        cost = 0
+        for i in range(1, len(route)):
+    #       - Get smallest route 
+
+
 
 
 def get_instructions(robot_start, goal, dirs, dirs_inv):
@@ -51,60 +117,27 @@ def get_instructions(robot_start, goal, dirs, dirs_inv):
         if elem.isdigit():
             elem = int(elem)
         # distance to the key
-        #print(current_pos, elem, dirs[elem])
+        print(current_pos, elem, dirs[elem])
         next_key_pos = dirs[elem]
         mv_y = next_key_pos[0] - current_pos[0]
         mv_x = next_key_pos[1] - current_pos[1]
-        actual_x = 0
+        actual_x = 0e
         actual_y = 0
         through = []
-        if (next_key_pos[0], current_pos[1]) not in dirs_inv:
-            #print("current",current_pos)
-            #print("next",next_key_pos)
-            #print(dirs.keys())
-            #print((current_pos[0], next_key_pos[1]))
-            assert (current_pos[0], next_key_pos[1]) in dirs_inv
 
-            if mv_x > 0:
-                # Go right 
-                actual_x += mv_x
-                instructions.extend([">"]* mv_x)
-            elif mv_x < 0:
-                 # Go left  
-                actual_x += -1 * abs(mv_x)
-                instructions.extend(["<"] * abs(mv_x))
-
-            if mv_y > 0:
-                # Go down 
-                actual_y += mv_y
-                instructions.extend(["v"]* mv_y)
-            elif mv_y < 0:
-                # Go Up  
-                actual_y += -1 * abs(mv_y)
-                instructions.extend(["^"] * abs(mv_y))
-        else:
-            assert (next_key_pos[0],current_pos[1]) in dirs_inv
-            if mv_y > 0:
-                # Go down 
-                actual_y += mv_y
-                instructions.extend(["v"]* mv_y)
-            elif mv_y < 0:
-                # Go Up  
-                actual_y += -1 * abs(mv_y)
-                instructions.extend(["^"] * abs(mv_y))
-            if mv_x > 0:
-                # Go right 
-                actual_x += mv_x
-                instructions.extend([">"]* mv_x)
-            elif mv_x < 0:
-                 # Go left  
-                actual_x += -1 * abs(mv_x)
-                instructions.extend(["<"] * abs(mv_x))
+        routes = manhattan_routes(current_pos, next_key_pos, dirs_inv)
+        print(routes)
+        best_route = None
+        best_cost = float("inf")
+        for route in routes:
+            route_cost = get_route_cost(route)
+            if route_cost < best_cost:
+                best_route = route
+                best_cost = route_cost
+        print(routes)
+        instructions.extend(best_route)
         instructions.append("A")
-        print(instructions[-(abs(mv_x)+abs(mv_y))-1:])
-
-        assert dirs_inv[(current_pos[0]+actual_y, current_pos[1]+actual_x)] == elem
-
+        #print(instructions[-(abs(mv_x)+abs(mv_y))-1:])
         current_pos = next_key_pos
     return instructions
 
@@ -128,21 +161,15 @@ def part_1():
         print(len(seq), int(el[:len(el)-1]))
         part1 += len(seq) * int(el[:len(el)-1])
         print(part1)
-
-#assert "".join(get_instructions(KEY_ROBOT_START, "029A", NUM_INV)) == "<A^A>^^AvvvA"
-#<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
-#<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
-#v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA^<A>Av<A^>AA<A>Av<A<A>>^AAA<Av>A^A
-#assert part_1() == 126384
+    return part1
 
 print("".join(get_shortest_sequence("379A")))
 assert len(get_shortest_sequence("379A")) == 64
 assert "".join(get_instructions(DIR_ROBOT_START, "<A^A>^^AvvvA", DIR_INV,DIR)) == "v<<A>>^A<A>AvA<^AA>A<vAAA>^A"
 
 print(get_shortest_sequence("029A"))
-assert get_shortest_sequence("029A") == "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"
+assert len(get_shortest_sequence("029A")) == 68
 assert len(get_shortest_sequence("379A")) == 64
 
 assert part_1() == 126384
 
-#<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
