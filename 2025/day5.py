@@ -104,8 +104,18 @@ prev_len = len(ranges) + 1
 
 def merge(ranges):
     prev_len = len(ranges) + 1
-    #ranges = sorted(ranges, key=lambda x: x.min)
+    CAC = 0
     while prev_len > len(ranges):
+        if CAC == 0:
+            key_func = lambda x: x.min
+            CAC = 1
+        if CAC == 1:
+            key_func = lambda x: x.max
+            CAC = 0
+
+
+        ranges = sorted(ranges, key=key_func)
+
         prev_len = len(ranges)
         ranges = merge_ranges(ranges)
 
@@ -120,11 +130,9 @@ def check(ranges):
 
 while not check(ranges):
 
-    random.shuffle(ranges)
+    #random.shuffle(ranges)
     ranges = merge(ranges)
 check(ranges)
 
-print("RANGES")
-print(ranges)
-print("PART 2")
+
 print(sum(len(r) for r in ranges))
